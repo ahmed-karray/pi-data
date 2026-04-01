@@ -48,5 +48,4 @@ Thumbs.db
 *.joblib
 
 # Large data files
-pi/Data5G/train_test_network.csv
 pi/streamlit_app/models/*.pkl
