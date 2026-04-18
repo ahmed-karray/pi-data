@@ -11,16 +11,24 @@ def main():
     parser = argparse.ArgumentParser(description="6G IDS Notebook-Faithful LightGBM runner")
 
     parser.add_argument("--list-data", action="store_true", help="List datasets in ../Data5G")
-    parser.add_argument("--prepare", action="store_true", help="Prepare one dataset exactly like notebook")
-    parser.add_argument("--train", action="store_true", help="Train LightGBM on one dataset exactly like notebook")
-    parser.add_argument("--evaluate", action="store_true", help="Evaluate saved model on one dataset")
-    parser.add_argument("--all", action="store_true", help="Train LightGBM on all notebook datasets")
+    parser.add_argument(
+        "--prepare", action="store_true", help="Prepare one dataset exactly like notebook"
+    )
+    parser.add_argument(
+        "--train", action="store_true", help="Train LightGBM on one dataset exactly like notebook"
+    )
+    parser.add_argument(
+        "--evaluate", action="store_true", help="Evaluate saved model on one dataset"
+    )
+    parser.add_argument(
+        "--all", action="store_true", help="Train LightGBM on all notebook datasets"
+    )
 
     parser.add_argument(
         "--dataset",
         type=str,
         default=None,
-        help="Dataset name: eMBB, mMTC, URLLC, TON_IoT, train_test_network"
+        help="Dataset name: eMBB, mMTC, URLLC, TON_IoT, train_test_network",
     )
 
     args = parser.parse_args()

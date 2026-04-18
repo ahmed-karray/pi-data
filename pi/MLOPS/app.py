@@ -5,7 +5,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
 
-
 BASE_DIR = Path(__file__).resolve().parent
 
 MODEL_FILES = {
@@ -31,8 +30,7 @@ def load_bundle(dataset_name: str):
     model_path = MODEL_FILES[dataset_name]
     if not model_path.exists():
         raise HTTPException(
-            status_code=404,
-            detail=f"Model file not found: {model_path.name}. Train it first."
+            status_code=404, detail=f"Model file not found: {model_path.name}. Train it first."
         )
 
     return joblib.load(model_path)
@@ -68,5 +66,5 @@ def predict(req: PredictRequest):
         "dataset": req.dataset,
         "prediction": pred_label,
         "probabilities": proba,
-        "used_features": features
+        "used_features": features,
     }

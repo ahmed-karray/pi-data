@@ -21,7 +21,7 @@ Full MLOps implementation of the 6G Intrusion Detection System, applying all 7 a
 └── streamlit_app/
     └── models/                # Exported ensemble artefacts
 ```
-
+ 
 ---
 
 ## Ateliers Applied

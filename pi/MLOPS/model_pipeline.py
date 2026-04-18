@@ -25,7 +25,6 @@ from sklearn.preprocessing import (
 
 from imblearn.over_sampling import SMOTE
 
-
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 DATA_DIR = PROJECT_DIR / "Data5G"
@@ -46,25 +45,25 @@ DATASET_FILES = {
 # -----------------------------
 # Exact notebook feature sets
 # -----------------------------
-embb_features = ['Dur', 'TotPkts', 'TotBytes', 'Rate', 'Load', 'Loss', 'pLoss', 'TcpRtt']
-mmtc_features = ['TotPkts', 'Rate', 'SrcGap', 'DstGap', 'Dur', 'Load', 'Loss', 'TcpRtt']
-urllc_features = ['TcpRtt', 'SynAck', 'AckDat', 'Loss', 'Dur', 'Rate', 'TotPkts', 'TotBytes']
+embb_features = ["Dur", "TotPkts", "TotBytes", "Rate", "Load", "Loss", "pLoss", "TcpRtt"]
+mmtc_features = ["TotPkts", "Rate", "SrcGap", "DstGap", "Dur", "Load", "Loss", "TcpRtt"]
+urllc_features = ["TcpRtt", "SynAck", "AckDat", "Loss", "Dur", "Rate", "TotPkts", "TotBytes"]
 toniot_features = [
-    'src_bytes',
-    'dst_bytes',
-    'src_pkts',
-    'dst_pkts',
-    'duration',
-    'proto',
-    'conn_state',
-    'service',
+    "src_bytes",
+    "dst_bytes",
+    "src_pkts",
+    "dst_pkts",
+    "duration",
+    "proto",
+    "conn_state",
+    "service",
 ]
 
 FEATURE_MAP = {
-    'mMTC': mmtc_features,
-    'URLLC': urllc_features,
-    'eMBB': embb_features,
-    'TON_IoT': toniot_features,
+    "mMTC": mmtc_features,
+    "URLLC": urllc_features,
+    "eMBB": embb_features,
+    "TON_IoT": toniot_features,
 }
 
 SMOTE_THRESHOLD = 2.0
@@ -128,11 +127,24 @@ def load_dataset(dataset_name: str):
 
 def make_xy(df, label_col="Label"):
     drop_cols = [
-        label_col, "label_raw", "predicted", "UniqueID", "X",
-        "anomaly_type", "type",
-        "SrcAddr", "DstAddr", "Sport", "Dport",
-        "src_ip", "dst_ip", "src_port", "dst_port",
-        "source_ip", "destination_ip", "timestamp"
+        label_col,
+        "label_raw",
+        "predicted",
+        "UniqueID",
+        "X",
+        "anomaly_type",
+        "type",
+        "SrcAddr",
+        "DstAddr",
+        "Sport",
+        "Dport",
+        "src_ip",
+        "dst_ip",
+        "src_port",
+        "dst_port",
+        "source_ip",
+        "destination_ip",
+        "timestamp",
     ]
     drop_cols = [c for c in drop_cols if c in df.columns]
     X = df.drop(columns=drop_cols, errors="ignore")
@@ -144,16 +156,20 @@ def build_preprocessor(X):
     num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
     cat_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
 
-    num_pipe = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("log1p", log1p_transformer),
-        ("scaler", RobustScaler()),
-    ])
+    num_pipe = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("log1p", log1p_transformer),
+            ("scaler", RobustScaler()),
+        ]
+    )
 
-    cat_pipe = Pipeline([
-        ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ])
+    cat_pipe = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ]
+    )
 
     transformers = []
     if num_cols:
@@ -180,10 +196,7 @@ def prepare_data(dataset_name=None):
     y_enc = le.fit_transform(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y_enc,
-        test_size=0.25,
-        random_state=42,
-        stratify=y_enc
+        X, y_enc, test_size=0.25, random_state=42, stratify=y_enc
     )
 
     pre = build_preprocessor(X_train)
@@ -209,6 +222,7 @@ def prepare_data(dataset_name=None):
         "X_test_proc": X_test_proc,
         "imbalance_ratio": ratio,
     }
+
 
 def train_model(dataset_name=None):
     info = prepare_data(dataset_name)
@@ -246,7 +260,7 @@ def train_model(dataset_name=None):
         scale_pos_weight=scale_pos,
         random_state=42,
         n_jobs=-1,
-        verbose=-1
+        verbose=-1,
     )
 
     mlflow.set_experiment("6G_IDS_LightGBM")
@@ -268,11 +282,8 @@ def train_model(dataset_name=None):
         model.fit(
             X_train_proc,
             y_train,
-            callbacks=[
-                lgb.early_stopping(30, verbose=False),
-                lgb.log_evaluation(period=-1)
-            ],
-            eval_set=[(X_test_proc, y_test)]
+            callbacks=[lgb.early_stopping(30, verbose=False), lgb.log_evaluation(period=-1)],
+            eval_set=[(X_test_proc, y_test)],
         )
 
         train_pred = model.predict(X_train_proc)
@@ -321,6 +332,7 @@ def train_model(dataset_name=None):
         "roc_auc": auc,
     }
 
+
 def evaluate_model(dataset_name=None):
     if not dataset_name:
         raise ValueError("dataset_name is required")
@@ -344,10 +356,7 @@ def evaluate_model(dataset_name=None):
     y_enc = le.transform(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y_enc,
-        test_size=0.25,
-        random_state=42,
-        stratify=y_enc
+        X, y_enc, test_size=0.25, random_state=42, stratify=y_enc
     )
 
     X_test_proc = pre.transform(X_test)
