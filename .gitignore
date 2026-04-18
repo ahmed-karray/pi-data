@@ -42,10 +42,49 @@ pi/env/
 .DS_Store
 Thumbs.db
 
-# Model files (large binary files)
-*.pkl
-*.h5
-*.joblib
+# ============================================
+# MLOPS Specific Files (DO NOT PUSH)
+# ============================================
+
+# Trained Models (large binary files - retrain locally)
+pi/MLOPS/*.joblib
+pi/MLOPS/*.pkl
+pi/MLOPS/*.h5
+
+# Databases (generated locally)
+pi/MLOPS/*.db
+pi/MLOPS/*.sqlite
+pi/MLOPS/*.sqlite3
+
+# MLflow artifacts (generated during training)
+pi/MLOPS/mlruns/
+pi/MLOPS/mlflow-runs/
+
+# Test cache
+pi/MLOPS/.pytest_cache/
+pi/MLOPS/.coverage
+pi/MLOPS/htmlcov/
+
+# Logs
+pi/MLOPS/*.log
+pi/MLOPS/logs/
+
+# Temporary files
+pi/MLOPS/tmp/
+pi/MLOPS/temp/
+pi/MLOPS/*.tmp
 
 # Large data files
 pi/streamlit_app/models/*.pkl
+pi/Data5G/*.csv
+pi/Data5G/*.arff
+
+# Generated plots/images
+pi/MLOPS/shap_outputs/
+pi/MLOPS/*.png
+pi/MLOPS/*.jpg
+
+# Environment variables
+.env
+.env.local
+pi/MLOPS/.env

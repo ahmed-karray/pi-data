@@ -10,6 +10,12 @@ imbalanced-learn
 xgboost
 lightgbm
 joblib
+scipy
+
+# Explainability
+shap
+matplotlib
+seaborn
 
 # Visualisation
 matplotlib
@@ -33,3 +39,8 @@ bandit
 # Testing
 pytest
 httpx         # required by FastAPI test client
+
+# Dashboard
+streamlit
+plotly
+pillow

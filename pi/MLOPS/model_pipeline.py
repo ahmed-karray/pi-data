@@ -6,6 +6,7 @@ import pandas as pd
 import lightgbm as lgb
 import mlflow
 import mlflow.sklearn
+import warnings
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
@@ -24,6 +25,9 @@ from sklearn.preprocessing import (
 )
 
 from imblearn.over_sampling import SMOTE
+
+# Suppress sklearn feature name warnings
+warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -177,7 +181,9 @@ def build_preprocessor(X):
     if cat_cols:
         transformers.append(("cat", cat_pipe, cat_cols))
 
-    return ColumnTransformer(transformers=transformers, remainder="drop")
+    return ColumnTransformer(
+        transformers=transformers, remainder="drop", verbose_feature_names_out=False
+    )
 
 
 def prepare_data(dataset_name=None):
@@ -202,6 +208,12 @@ def prepare_data(dataset_name=None):
     pre = build_preprocessor(X_train)
     X_train_proc = pre.fit_transform(X_train)
     X_test_proc = pre.transform(X_test)
+
+    # Convert to numpy arrays to avoid feature name warnings
+    if hasattr(X_train_proc, "values"):
+        X_train_proc = X_train_proc.values
+    if hasattr(X_test_proc, "values"):
+        X_test_proc = X_test_proc.values
 
     counts = pd.Series(y_train).value_counts()
     ratio = counts.max() / counts.min()
@@ -261,23 +273,40 @@ def train_model(dataset_name=None):
         random_state=42,
         n_jobs=-1,
         verbose=-1,
+        force_col_wise=True,  # Suppress warnings
     )
 
-    mlflow.set_experiment("6G_IDS_LightGBM")
+    # Try MLflow tracking, but continue if it fails (e.g., permission issues)
+    mlflow_enabled = True
+    mlflow_run = None
 
-    with mlflow.start_run(run_name=f"LightGBM_{dataset_name}"):
+    try:
+        # Use SQLite database backend (recommended over file store)
+        import os
 
-        mlflow.log_param("dataset", dataset_name)
-        mlflow.log_param("model", "LightGBM")
-        mlflow.log_param("n_estimators", 300)
-        mlflow.log_param("learning_rate", 0.05)
-        mlflow.log_param("num_leaves", 63)
-        mlflow.log_param("max_depth", -1)
-        mlflow.log_param("min_child_samples", 20)
-        mlflow.log_param("scale_pos_weight", scale_pos)
-        mlflow.log_param("feature_count", len(info["features"]))
-        mlflow.log_param("smote_threshold", SMOTE_THRESHOLD)
-        mlflow.log_param("used_smote", used_smote)
+        db_path = os.path.abspath("mlflow.db")
+        tracking_uri = f"sqlite:///{db_path}"
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment("6G_IDS_LightGBM")
+        mlflow_run = mlflow.start_run(run_name=f"LightGBM_{dataset_name}")
+    except Exception as e:
+        print(f"Warning: MLflow tracking disabled due to error: {str(e)[:100]}")
+        mlflow_enabled = False
+        mlflow_run = None
+
+    try:
+        if mlflow_enabled and mlflow_run:
+            mlflow.log_param("dataset", dataset_name)
+            mlflow.log_param("model", "LightGBM")
+            mlflow.log_param("n_estimators", 300)
+            mlflow.log_param("learning_rate", 0.05)
+            mlflow.log_param("num_leaves", 63)
+            mlflow.log_param("max_depth", -1)
+            mlflow.log_param("min_child_samples", 20)
+            mlflow.log_param("scale_pos_weight", scale_pos)
+            mlflow.log_param("feature_count", len(info["features"]))
+            mlflow.log_param("smote_threshold", SMOTE_THRESHOLD)
+            mlflow.log_param("used_smote", used_smote)
 
         model.fit(
             X_train_proc,
@@ -307,13 +336,21 @@ def train_model(dataset_name=None):
         print(f"ROC-AUC  : {auc:.4f}")
         print(classification_report(y_test, y_pred, target_names=le.classes_))
 
-        mlflow.log_metric("train_accuracy", train_acc)
-        mlflow.log_metric("test_accuracy", test_acc)
-        mlflow.log_metric("accuracy", acc)
-        mlflow.log_metric("f1_macro", f1)
-        mlflow.log_metric("roc_auc", auc)
-
-        mlflow.sklearn.log_model(model, artifact_path="lightgbm_model")
+        if mlflow_enabled and mlflow_run:
+            mlflow.log_metric("train_accuracy", train_acc)
+            mlflow.log_metric("test_accuracy", test_acc)
+            mlflow.log_metric("accuracy", acc)
+            mlflow.log_metric("f1_macro", f1)
+            mlflow.log_metric("roc_auc", auc)
+            # Use 'name' parameter instead of deprecated 'artifact_path'
+            try:
+                mlflow.sklearn.log_model(model, name="lightgbm_model")
+            except TypeError:
+                # Fallback for older MLflow versions
+                mlflow.sklearn.log_model(model, artifact_path="lightgbm_model")
+    finally:
+        if mlflow_enabled and mlflow_run:
+            mlflow.end_run()
 
         bundle = {
             "dataset_name": dataset_name,
@@ -360,6 +397,10 @@ def evaluate_model(dataset_name=None):
     )
 
     X_test_proc = pre.transform(X_test)
+
+    # Convert to numpy arrays to avoid feature name warnings
+    if hasattr(X_test_proc, "values"):
+        X_test_proc = X_test_proc.values
 
     y_pred = model.predict(X_test_proc)
     y_proba = model.predict_proba(X_test_proc)[:, 1]
