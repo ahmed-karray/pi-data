@@ -25,9 +25,12 @@ ES_PORT     := 9200
 KIBANA_PORT := 5601
 
 .PHONY: all install venv list-data prepare train train-all evaluate api api-bg \
-        mlflow mlflow-bg lint format format-check security test \
-        docker-build docker-run docker-push docker-stop docker-images \
-        monitoring-up monitoring-down monitoring-status clean help
+        mlflow mlflow-bg dashboard lint format format-check security test \
+        docker-build docker-build-light docker-build-limited docker-build-clean \
+        docker-run docker-push docker-stop docker-clean docker-images \
+        monitoring-up monitoring-down monitoring-status \
+        stack-up stack-down stack-restart stack-logs stack-ps \
+        clean help
 
 all: install lint test train-all
 	@echo Full pipeline complete.
@@ -87,6 +90,18 @@ docker-build:
 	docker build -t $(IMAGE_NAME):$(TAG) .
 	@echo Image built: $(IMAGE_NAME):$(TAG)
 
+docker-build-light:
+	docker build -f Dockerfile.light -t $(IMAGE_NAME)_light:$(TAG) .
+	@echo Lightweight image built: $(IMAGE_NAME)_light:$(TAG)
+
+docker-build-limited:
+	docker build --memory=2g --memory-swap=4g -t $(IMAGE_NAME):$(TAG) .
+	@echo Image built with memory limits: $(IMAGE_NAME):$(TAG)
+
+docker-build-clean:
+	docker build --no-cache -t $(IMAGE_NAME):$(TAG) .
+	@echo Image built without cache: $(IMAGE_NAME):$(TAG)
+
 docker-run:
 	docker run -d --name 6g_ids_container -p $(API_PORT):$(API_PORT) -p $(MLFLOW_PORT):$(MLFLOW_PORT) -e MLFLOW_TRACKING_URI=http://localhost:$(MLFLOW_PORT) $(IMAGE_NAME):$(TAG)
 	@echo Container running: http://localhost:$(API_PORT)/docs
@@ -99,6 +114,10 @@ docker-push:
 	docker tag $(IMAGE_NAME):$(TAG) $(DOCKER_USER)/$(IMAGE_NAME):$(TAG)
 	docker push $(DOCKER_USER)/$(IMAGE_NAME):$(TAG)
 	@echo Image pushed: $(DOCKER_USER)/$(IMAGE_NAME):$(TAG)
+
+docker-clean:
+	docker system prune -a --volumes -f
+	@echo Docker system cleaned
 
 docker-images:
 	docker images
@@ -113,6 +132,26 @@ monitoring-down:
 
 monitoring-status:
 	$(PYTHON) -c "import json, urllib.request; print(json.dumps(json.load(urllib.request.urlopen('http://localhost:$(ES_PORT)/_cluster/health')), indent=2))"
+
+stack-up:
+	docker compose up -d
+	@echo MLflow: http://localhost:5000
+	@echo API: http://localhost:8000
+	@echo Frontend: http://localhost:80
+	@echo Elasticsearch: http://localhost:9200
+	@echo Kibana: http://localhost:5601
+
+stack-down:
+	docker compose down
+
+stack-restart:
+	docker compose restart
+
+stack-logs:
+	docker compose logs -f
+
+stack-ps:
+	docker compose ps
 
 clean:
 	powershell -NoProfile -Command "Get-ChildItem -Recurse -Filter *.pyc | Remove-Item -Force -ErrorAction SilentlyContinue"
@@ -132,5 +171,9 @@ help:
 	@echo   make lint
 	@echo   make test
 	@echo   make api
+	@echo   make dashboard
 	@echo   make mlflow
 	@echo   make docker-build IMAGE_NAME=my_image
+	@echo   make stack-up          # Lancer tous les services
+	@echo   make stack-down        # Arrêter tous les services
+	@echo   make stack-logs        # Voir les logs

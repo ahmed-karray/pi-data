@@ -9,24 +9,33 @@
 # =============================================================================
 
 # ── Base image ────────────────────────────────────────────────────────────────
-FROM python:3.11-slim
+FROM python:3.13
 
 # Metadata
 LABEL maintainer="6G IDS MLOps"
 LABEL description="6G Smart City Intrusion Detection System — FastAPI + MLflow"
 
 # ── System dependencies ───────────────────────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies in smaller chunks to reduce memory usage
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install build tools separately (optional - only if needed for compilation)
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends build-essential && \
+#     rm -rf /var/lib/apt/lists/*
 
 # ── Working directory ─────────────────────────────────────────────────────────
 WORKDIR /app
 
 # ── Copy project files ────────────────────────────────────────────────────────
+# Copy only requirements first (better layer caching)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Python dependencies with memory optimization
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy remaining project files (datasets mounted at runtime via volume)
 COPY . .
