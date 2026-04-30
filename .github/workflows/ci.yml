@@ -1,0 +1,186 @@
+name: MLOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-check:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3  
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd pi/MLOPS
+          pip install -r requirements.txt
+      
+      - name: Lint with flake8
+        run: |
+          cd pi/MLOPS
+          python -m flake8 . --max-line-length=100 --exclude=venv,__pycache__,.git --count --statistics
+      
+      - name: Check code formatting with Black
+        run: |
+          cd pi/MLOPS
+          python -m black . --line-length 100 --check
+      
+      - name: Security scan with Bandit
+        run: |
+          cd pi/MLOPS
+          python -m bandit -r . --exclude venv -ll -f json -o bandit-report.json
+        continue-on-error: true
+      
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-security-report
+          path: pi/MLOPS/bandit-report.json
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd pi/MLOPS
+          pip install -r requirements.txt
+      
+      - name: Run pytest
+        run: |
+          cd pi/MLOPS
+          python -m pytest test_api.py test_pipeline.py test_attack_classifier.py -v --tb=short --junitxml=test-results.xml
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: pi/MLOPS/test-results.xml
+      
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: pi/MLOPS/test-results.xml
+
+  train-models:
+    name: Train ML Models
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          cd pi/MLOPS
+          pip install -r requirements.txt
+      
+      - name: Download datasets
+        run: |
+          # Datasets should be available in pi/Data5G
+          ls -la pi/Data5G/
+      
+      - name: Train all models
+        run: |
+          cd pi/MLOPS
+          python main.py --all
+      
+      - name: Upload trained models
+        uses: actions/upload-artifact@v3
+        with:
+          name: trained-models
+          path: pi/MLOPS/*.joblib
+      
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlflow-artifacts
+          path: pi/MLOPS/mlflow.db
+
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: train-models
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./pi/MLOPS
+          file: ./pi/MLOPS/Dockerfile.light
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/6g-ids-api:latest
+            ${{ secrets.DOCKER_USERNAME }}/6g-ids-api:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/6g-ids-api:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/6g-ids-api:buildcache,mode=max
+      
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./pi/app_web
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/iotinel-web:latest
+            ${{ secrets.DOCKER_USERNAME }}/iotinel-web:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/iotinel-web:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/iotinel-web:buildcache,mode=max
+
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [quality-check, test, train-models, docker-build]
+    if: always()
+    
+    steps:
+      - name: Check job status
+        run: |
+          echo "Quality Check: ${{ needs.quality-check.result }}"
+          echo "Tests: ${{ needs.test.result }}"
+          echo "Model Training: ${{ needs.train-models.result }}"
+          echo "Docker Build: ${{ needs.docker-build.result }}"
