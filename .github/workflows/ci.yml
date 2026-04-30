@@ -43,7 +43,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload Bandit report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bandit-security-report
           path: pi/MLOPS/bandit-report.json
@@ -74,7 +74,7 @@ jobs:
           python -m pytest test_api.py test_pipeline.py test_attack_classifier.py -v --tb=short --junitxml=test-results.xml
       
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results
@@ -118,13 +118,13 @@ jobs:
           python main.py --all
       
       - name: Upload trained models
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trained-models
           path: pi/MLOPS/*.joblib
       
       - name: Upload MLflow artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts
           path: pi/MLOPS/mlflow.db
