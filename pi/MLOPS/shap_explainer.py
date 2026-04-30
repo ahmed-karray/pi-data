@@ -159,12 +159,8 @@ class SHAPExplainer:
 
         for i, feat in enumerate(top_features, 1):
             direction = "increases" if feat["shap_value"] > 0 else "decreases"
-            explanation += (
-                f"{i}. {feat['feature']} (value: {feat['feature_value']:.3f})\n"
-            )
-            explanation += (
-                f"   → {direction} malicious score by {abs(feat['shap_value']):.3f}\n"
-            )
+            explanation += f"{i}. {feat['feature']} (value: {feat['feature_value']:.3f})\n"
+            explanation += f"   → {direction} malicious score by {abs(feat['shap_value']):.3f}\n"
 
         return explanation
 

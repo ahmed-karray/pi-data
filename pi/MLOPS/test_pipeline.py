@@ -199,9 +199,7 @@ def test_explain_prediction_structure(
     assert "prediction_score" in explanation
 
 
-def test_shap_values_type(
-    explainer, model, preprocessor, feature_names, sample_features
-):
+def test_shap_values_type(explainer, model, preprocessor, feature_names, sample_features):
     """Test that SHAP values are returned as list"""
     explanation = explainer.explain_prediction(
         model=model,
@@ -215,9 +213,7 @@ def test_shap_values_type(
     assert len(explanation["shap_values"]) > 0
 
 
-def test_feature_importance_ranking(
-    explainer, model, preprocessor, feature_names, sample_features
-):
+def test_feature_importance_ranking(explainer, model, preprocessor, feature_names, sample_features):
     """Test that features are ranked by importance"""
     explanation = explainer.explain_prediction(
         model=model,
@@ -231,15 +227,10 @@ def test_feature_importance_ranking(
 
     # Check that features are sorted by importance (descending)
     for i in range(len(feature_importance) - 1):
-        assert (
-            feature_importance[i]["importance"]
-            >= feature_importance[i + 1]["importance"]
-        )
+        assert feature_importance[i]["importance"] >= feature_importance[i + 1]["importance"]
 
 
-def test_top_features_limit(
-    explainer, model, preprocessor, feature_names, sample_features
-):
+def test_top_features_limit(explainer, model, preprocessor, feature_names, sample_features):
     """Test that top features are limited to 5"""
     explanation = explainer.explain_prediction(
         model=model,
@@ -306,9 +297,7 @@ def test_bar_plot_generation(explainer):
         assert plot.startswith("data:image/png;base64,")
 
 
-def test_explainer_caching(
-    explainer, model, preprocessor, feature_names, sample_features
-):
+def test_explainer_caching(explainer, model, preprocessor, feature_names, sample_features):
     """Test that explainers are cached per dataset"""
     # First call
     explainer.explain_prediction(

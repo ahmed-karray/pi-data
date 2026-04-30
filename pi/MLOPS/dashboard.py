@@ -166,9 +166,7 @@ def check_feature_drift(dataset, hours=24, baseline_hours=168):
     """Check for feature drift"""
     try:
         params = {"hours": hours, "baseline_hours": baseline_hours}
-        response = requests.get(
-            f"{API_URL}/drift/features/{dataset}", params=params, timeout=10
-        )
+        response = requests.get(f"{API_URL}/drift/features/{dataset}", params=params, timeout=10)
         if response.status_code == 200:
             return response.json()
         return None
@@ -180,9 +178,7 @@ def check_performance_drift(dataset, hours=24, baseline_hours=168):
     """Check for performance drift"""
     try:
         params = {"hours": hours, "baseline_hours": baseline_hours}
-        response = requests.get(
-            f"{API_URL}/drift/performance/{dataset}", params=params, timeout=10
-        )
+        response = requests.get(f"{API_URL}/drift/performance/{dataset}", params=params, timeout=10)
         if response.status_code == 200:
             return response.json()
         return None
@@ -463,9 +459,7 @@ elif page == "🔍 Live Prediction":
 
             with col1:
                 pred_class = (
-                    "alert-critical"
-                    if result["prediction"] == "Malicious"
-                    else "alert-low"
+                    "alert-critical" if result["prediction"] == "Malicious" else "alert-low"
                 )
                 st.markdown(
                     f'<div class="metric-card {pred_class}"><h3>Prediction</h3>'
@@ -497,9 +491,7 @@ elif page == "🔍 Live Prediction":
             with col1:
                 st.write(f"**Alert Status:** {result['alert_status']}")
                 st.write(f"**Severity:** {result['severity']}")
-                st.write(
-                    f"**Response Time:** {result.get('response_time_ms', 0):.2f} ms"
-                )
+                st.write(f"**Response Time:** {result.get('response_time_ms', 0):.2f} ms")
 
             with col2:
                 st.write("**Recommended Action:**")
@@ -573,9 +565,7 @@ elif page == "📊 Statistics":
                 list(stats["attack_types"].items()),
                 columns=["Attack Type", "Count"],
             )
-            attack_df["Percentage"] = (
-                attack_df["Count"] / attack_df["Count"].sum() * 100
-            )
+            attack_df["Percentage"] = attack_df["Count"] / attack_df["Count"].sum() * 100
             st.dataframe(
                 attack_df.style.format({"Percentage": "{:.1f}%"}),
                 use_container_width=True,
@@ -643,9 +633,7 @@ elif page == "🎯 SHAP Analysis":
 elif page == "📈 Timeline":
     st.header("Prediction Timeline")
 
-    timeline_data = get_timeline_data(
-        hours=hours, interval_minutes=60, dataset=dataset_param
-    )
+    timeline_data = get_timeline_data(hours=hours, interval_minutes=60, dataset=dataset_param)
 
     if timeline_data and timeline_data.get("timeline"):
         df = pd.DataFrame(timeline_data["timeline"])
@@ -768,9 +756,7 @@ elif page == "⚠️ Drift Monitor":
                     # Feature drift details
                     if feature_drift.get("feature_drift_details"):
                         st.write("**Detailed Analysis:**")
-                        drift_df = pd.DataFrame(
-                            feature_drift["feature_drift_details"]
-                        ).T
+                        drift_df = pd.DataFrame(feature_drift["feature_drift_details"]).T
                         drift_df = drift_df.sort_values("ks_statistic", ascending=False)
 
                         # Format and display
@@ -883,9 +869,7 @@ elif page == "⚠️ Drift Monitor":
                 retrain_info = should_retrain(monitor_dataset)
                 if retrain_info:
                     if retrain_info.get("should_retrain"):
-                        st.error(
-                            f"⚠️ **RETRAINING RECOMMENDED**: {retrain_info.get('reason')}"
-                        )
+                        st.error(f"⚠️ **RETRAINING RECOMMENDED**: {retrain_info.get('reason')}")
                         st.button("🔄 Trigger Retraining", type="primary")
                     else:
                         st.success(f"✅ {retrain_info.get('reason')}")

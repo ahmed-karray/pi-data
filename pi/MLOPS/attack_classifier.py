@@ -208,20 +208,15 @@ class AttackClassifier:
             Recommended action
         """
         actions = {
-            "DDoS Attack": (
-                "Block source IP, enable rate limiting, " "activate DDoS mitigation"
-            ),
+            "DDoS Attack": ("Block source IP, enable rate limiting, " "activate DDoS mitigation"),
             "Ransomware": (
-                "Isolate affected systems, block file encryption, "
-                "restore from backup"
+                "Isolate affected systems, block file encryption, " "restore from backup"
             ),
             "Port Scanning": (
-                "Block source IP, enable firewall rules, "
-                "monitor for follow-up attacks"
+                "Block source IP, enable firewall rules, " "monitor for follow-up attacks"
             ),
             "Data Exfiltration": (
-                "Block outbound connection, investigate data breach, "
-                "alert security team"
+                "Block outbound connection, investigate data breach, " "alert security team"
             ),
             "Backdoor": "Terminate connection, scan for malware, reset credentials",
             "Flooding Attack": "Enable traffic filtering, increase bandwidth, block source",
@@ -229,16 +224,12 @@ class AttackClassifier:
                 "Implement QoS policies, throttle traffic, block source"
             ),
             "Injection Attack": "Sanitize inputs, update WAF rules, patch vulnerabilities",
-            "Man-in-the-Middle": (
-                "Enforce encryption, verify certificates, terminate connection"
-            ),
+            "Man-in-the-Middle": ("Enforce encryption, verify certificates, terminate connection"),
             "Password Attack": "Lock account, enable MFA, block source IP",
             "Latency Manipulation Attack": (
                 "Reroute traffic, investigate network path, enable monitoring"
             ),
-            "Packet Loss Attack": (
-                "Check network integrity, reroute traffic, investigate source"
-            ),
+            "Packet Loss Attack": ("Check network integrity, reroute traffic, investigate source"),
             "Cross-Site Scripting (XSS)": "Sanitize inputs, update WAF, patch application",
             "Benign": "No action required",
         }

@@ -142,9 +142,7 @@ def predict(req: PredictRequest):
 
                 # Generate visualizations
                 response["visualizations"] = {
-                    "bar_plot": explainer.generate_bar_plot(
-                        shap_explanation["feature_importance"]
-                    ),
+                    "bar_plot": explainer.generate_bar_plot(shap_explanation["feature_importance"]),
                     "waterfall_plot": explainer.generate_waterfall_plot(
                         shap_values, base_value, feature_names, feature_values
                     ),
@@ -214,9 +212,7 @@ def get_attack_stats(hours: int = 24, dataset: Optional[str] = None):
 
 
 @app.get("/stats/timeline")
-def get_timeline_stats(
-    hours: int = 24, interval_minutes: int = 60, dataset: Optional[str] = None
-):
+def get_timeline_stats(hours: int = 24, interval_minutes: int = 60, dataset: Optional[str] = None):
     """Get predictions grouped by time intervals"""
     try:
         timeline = get_predictions_by_time(

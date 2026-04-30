@@ -149,9 +149,7 @@ def log_prediction(
         return cursor.lastrowid
 
 
-def get_recent_predictions(
-    limit: int = 100, dataset: Optional[str] = None
-) -> List[Dict]:
+def get_recent_predictions(limit: int = 100, dataset: Optional[str] = None) -> List[Dict]:
     """Get recent predictions"""
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -180,9 +178,7 @@ def get_recent_predictions(
         return [dict(row) for row in rows]
 
 
-def get_attack_statistics(
-    hours: int = 24, dataset: Optional[str] = None
-) -> Dict[str, Any]:
+def get_attack_statistics(hours: int = 24, dataset: Optional[str] = None) -> Dict[str, Any]:
     """Get attack statistics for the last N hours"""
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -213,9 +209,7 @@ def get_attack_statistics(
         """,
             params,
         )
-        prediction_counts = {
-            row["prediction"]: row["count"] for row in cursor.fetchall()
-        }
+        prediction_counts = {row["prediction"]: row["count"] for row in cursor.fetchall()}
 
         # Attack types
         cursor.execute(
