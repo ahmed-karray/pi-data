@@ -1,10 +1,22 @@
 """FastAPI endpoint tests using the current API contract."""
 
+from pathlib import Path
+import pytest
 from fastapi.testclient import TestClient
 
 from app import app
 
 client = TestClient(app)
+
+# Check if models are available
+BASE_DIR = Path(__file__).resolve().parent
+MODELS_AVAILABLE = all(
+    [
+        (BASE_DIR / "lightgbm_mMTC.joblib").exists(),
+        (BASE_DIR / "lightgbm_eMBB.joblib").exists(),
+        (BASE_DIR / "lightgbm_URLLC.joblib").exists(),
+    ]
+)
 
 
 def test_root_health():
@@ -53,6 +65,7 @@ def test_predict_embb_returns_structure():
 # SHAP Explainability Tests
 
 
+@pytest.mark.skipif(not MODELS_AVAILABLE, reason="Model files not found")
 def test_predict_with_shap_explanation():
     """Test /predict endpoint with SHAP explanation enabled"""
     r = client.post(
@@ -110,6 +123,7 @@ def test_predict_with_shap_explanation():
     assert "Prediction:" in shap_exp["explanation"]
 
 
+@pytest.mark.skipif(not MODELS_AVAILABLE, reason="Model files not found")
 def test_predict_without_shap_explanation():
     """Test /predict endpoint without SHAP explanation"""
     r = client.post(
@@ -141,6 +155,7 @@ def test_predict_without_shap_explanation():
     assert "shap_explanation" not in data
 
 
+@pytest.mark.skipif(not MODELS_AVAILABLE, reason="Model files not found")
 def test_predict_with_plots():
     """Test /predict endpoint with SHAP plots generation"""
     r = client.post(
@@ -181,6 +196,7 @@ def test_predict_with_plots():
     assert "waterfall_plot" in viz
 
 
+@pytest.mark.skipif(not MODELS_AVAILABLE, reason="Model files not found")
 def test_explain_endpoint():
     """Test dedicated /explain endpoint"""
     r = client.post(
@@ -209,6 +225,7 @@ def test_explain_endpoint():
     assert "visualizations" in data
 
 
+@pytest.mark.skipif(not MODELS_AVAILABLE, reason="Model files not found")
 def test_shap_multiple_datasets():
     """Test SHAP explanations work for all datasets"""
     datasets = {
