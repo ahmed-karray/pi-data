@@ -1,0 +1,258 @@
+openapi: 3.1.0
+info:
+  title: 6G IDS API - Administrator (Full Access)
+  version: 1.0.0
+  description: Full access integration surface for IOTinel by Hexamind Security.
+servers:
+  - url: http://localhost:8010
+tags:
+  - name: Auth
+    x-service-port: 8001
+    x-role-required: administrator
+  - name: Detection
+    x-service-port: 8002
+    x-role-required: administrator
+  - name: Training
+    x-service-port: 8003
+    x-role-required: administrator
+  - name: Monitoring
+    x-service-port: 8004
+    x-role-required: administrator
+  - name: Dashboard
+    x-service-port: 8005
+    x-role-required: administrator
+  - name: Admin
+    x-service-port: 8006
+    x-role-required: administrator
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive JWT cookie
+      responses:
+        "200":
+          description: Authenticated user
+  /auth/users:
+    get:
+      tags: [Auth]
+      summary: List users
+      responses:
+        "200":
+          description: User list
+    post:
+      tags: [Auth]
+      summary: Create user
+      responses:
+        "200":
+          description: User created
+  /auth/roles/{id}:
+    put:
+      tags: [Auth]
+      summary: Update user role
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Role updated
+  /auth/users/{id}:
+    delete:
+      tags: [Auth]
+      summary: Delete user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deleted
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user profile
+      responses:
+        "200":
+          description: Profile payload
+  /detect/predict:
+    post:
+      tags: [Detection]
+      summary: Single prediction
+      responses:
+        "200":
+          description: Prediction result
+  /detect/batch:
+    get:
+      tags: [Detection]
+      summary: Batch prediction endpoint
+      responses:
+        "200":
+          description: Batch response
+  /detect/history:
+    get:
+      tags: [Detection]
+      summary: Prediction history
+      responses:
+        "200":
+          description: Prediction log
+  /train/start:
+    post:
+      tags: [Training]
+      summary: Trigger training
+      responses:
+        "200":
+          description: Training run created
+  /train/runs:
+    get:
+      tags: [Training]
+      summary: List experiment runs
+      responses:
+        "200":
+          description: Run list
+  /train/runs/{run_id}:
+    get:
+      tags: [Training]
+      summary: Run details
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run details
+  /train/promote/{run_id}:
+    post:
+      tags: [Training]
+      summary: Promote champion
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotion result
+  /train/datasets:
+    get:
+      tags: [Training]
+      summary: Dataset metadata
+      responses:
+        "200":
+          description: Dataset list
+  /monitor/drift:
+    get:
+      tags: [Monitoring]
+      summary: Drift scores
+      responses:
+        "200":
+          description: Drift report
+  /monitor/metrics:
+    get:
+      tags: [Monitoring]
+      summary: Production metrics
+      responses:
+        "200":
+          description: Metrics report
+  /monitor/alerts:
+    get:
+      tags: [Monitoring]
+      summary: Active alerts
+      responses:
+        "200":
+          description: Alert list
+  /monitor/retrain:
+    post:
+      tags: [Monitoring]
+      summary: Trigger drift-based retraining
+      responses:
+        "200":
+          description: Retrain result
+  /monitor/health:
+    get:
+      tags: [Monitoring]
+      summary: Monitoring health check
+      responses:
+        "200":
+          description: Health payload
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: KPI overview
+      responses:
+        "200":
+          description: Overview
+  /dashboard/attacks:
+    get:
+      tags: [Dashboard]
+      summary: Attack distribution
+      responses:
+        "200":
+          description: Attack chart input
+  /dashboard/timeline:
+    get:
+      tags: [Dashboard]
+      summary: Detection timeline
+      responses:
+        "200":
+          description: Timeline chart input
+  /dashboard/alerts:
+    get:
+      tags: [Dashboard]
+      summary: Recent alerts
+      responses:
+        "200":
+          description: Alert feed
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Admin user list
+      responses:
+        "200":
+          description: User list
+  /admin/users/{id}/activate:
+    put:
+      tags: [Admin]
+      summary: Activate or deactivate user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Status updated
+  /admin/settings:
+    get:
+      tags: [Admin]
+      summary: Get system settings
+      responses:
+        "200":
+          description: Settings payload
+    put:
+      tags: [Admin]
+      summary: Update system settings
+      responses:
+        "200":
+          description: Settings updated
+  /admin/platform:
+    get:
+      tags: [Admin]
+      summary: Platform status
+      responses:
+        "200":
+          description: Platform health
+  /admin/permissions:
+    get:
+      tags: [Admin]
+      summary: Role permission matrix
+      responses:
+        "200":
+          description: Permission matrix

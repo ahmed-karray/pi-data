@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  background: #0A1929;
+  color: #e2e8f0;
+}
+
+input, select, textarea, button {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(29, 158, 117, 0.35);
+}
+
+/* Progress bar styles */
+.progress-bar {
+  --progress: 0%;
+}
+
+.progress-bar-fill {
+  width: var(--progress);
+}
+
+/* Chart legend styles */
+.legend-dot {
+  --legend-color: #666;
+  background-color: var(--legend-color);
+}

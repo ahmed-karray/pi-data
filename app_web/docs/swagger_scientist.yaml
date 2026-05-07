@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: 6G IDS API - Data Scientist
+  version: 1.0.0
+  description: Scientist-scoped gateway API for IOTinel.
+servers:
+  - url: http://localhost:8010
+tags:
+  - name: Training
+  - name: Monitoring
+  - name: Detection
+paths:
+  /train/start:
+    post:
+      tags: [Training]
+      summary: Trigger training
+      responses:
+        "200":
+          description: Training payload
+  /train/runs:
+    get:
+      tags: [Training]
+      summary: Run list
+      responses:
+        "200":
+          description: Run collection
+  /train/promote/{run_id}:
+    post:
+      tags: [Training]
+      summary: Promote champion
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotion payload
+  /train/datasets:
+    get:
+      tags: [Training]
+      summary: Dataset metadata
+      responses:
+        "200":
+          description: Dataset collection
+  /monitor/drift:
+    get:
+      tags: [Monitoring]
+      summary: Drift scores
+      responses:
+        "200":
+          description: Drift payload
+  /monitor/metrics:
+    get:
+      tags: [Monitoring]
+      summary: Production metrics
+      responses:
+        "200":
+          description: Metrics timeline
+  /monitor/retrain:
+    post:
+      tags: [Monitoring]
+      summary: Retrain trigger
+      responses:
+        "200":
+          description: Retrain payload
+  /detect/predict:
+    post:
+      tags: [Detection]
+      summary: Validation prediction
+      responses:
+        "200":
+          description: Prediction result

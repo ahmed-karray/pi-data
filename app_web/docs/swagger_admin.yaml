@@ -1,0 +1,258 @@
+openapi: 3.1.0
+info:
+  title: 6G IDS API - Administrator (Full Access)
+  version: 1.0.0
+  description: Full-access gateway API for IOTinel.
+servers:
+  - url: http://localhost:8010
+tags:
+  - name: Auth
+    x-service-port: 8001
+    x-role-required: administrator
+  - name: Detection
+    x-service-port: 8002
+    x-role-required: administrator
+  - name: Training
+    x-service-port: 8003
+    x-role-required: administrator
+  - name: Monitoring
+    x-service-port: 8004
+    x-role-required: administrator
+  - name: Dashboard
+    x-service-port: 8005
+    x-role-required: administrator
+  - name: Admin
+    x-service-port: 8006
+    x-role-required: administrator
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      responses:
+        "200":
+          description: Login payload
+  /auth/users:
+    get:
+      tags: [Auth]
+      summary: List users
+      responses:
+        "200":
+          description: Users
+    post:
+      tags: [Auth]
+      summary: Create user
+      responses:
+        "200":
+          description: User created
+  /auth/roles/{id}:
+    put:
+      tags: [Auth]
+      summary: Update role
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Role updated
+  /auth/users/{id}:
+    delete:
+      tags: [Auth]
+      summary: Delete user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deleted
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current profile
+      responses:
+        "200":
+          description: Profile
+  /detect/predict:
+    post:
+      tags: [Detection]
+      summary: Single prediction
+      responses:
+        "200":
+          description: Prediction
+  /detect/batch:
+    get:
+      tags: [Detection]
+      summary: Batch analysis
+      responses:
+        "200":
+          description: Batch result
+  /detect/history:
+    get:
+      tags: [Detection]
+      summary: Prediction history
+      responses:
+        "200":
+          description: History
+  /train/start:
+    post:
+      tags: [Training]
+      summary: Start training
+      responses:
+        "200":
+          description: Training run
+  /train/runs:
+    get:
+      tags: [Training]
+      summary: List runs
+      responses:
+        "200":
+          description: Run collection
+  /train/runs/{run_id}:
+    get:
+      tags: [Training]
+      summary: Run details
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run detail
+  /train/promote/{run_id}:
+    post:
+      tags: [Training]
+      summary: Promote champion
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotion
+  /train/datasets:
+    get:
+      tags: [Training]
+      summary: Dataset metadata
+      responses:
+        "200":
+          description: Datasets
+  /monitor/drift:
+    get:
+      tags: [Monitoring]
+      summary: Drift scores
+      responses:
+        "200":
+          description: Drift report
+  /monitor/metrics:
+    get:
+      tags: [Monitoring]
+      summary: Production metrics
+      responses:
+        "200":
+          description: Metrics
+  /monitor/alerts:
+    get:
+      tags: [Monitoring]
+      summary: Alerts
+      responses:
+        "200":
+          description: Alerts
+  /monitor/retrain:
+    post:
+      tags: [Monitoring]
+      summary: Retrain
+      responses:
+        "200":
+          description: Retrain result
+  /monitor/health:
+    get:
+      tags: [Monitoring]
+      summary: Health check
+      responses:
+        "200":
+          description: Health
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: Overview
+      responses:
+        "200":
+          description: Overview
+  /dashboard/attacks:
+    get:
+      tags: [Dashboard]
+      summary: Attack distribution
+      responses:
+        "200":
+          description: Attack data
+  /dashboard/timeline:
+    get:
+      tags: [Dashboard]
+      summary: Timeline
+      responses:
+        "200":
+          description: Timeline data
+  /dashboard/alerts:
+    get:
+      tags: [Dashboard]
+      summary: Alert feed
+      responses:
+        "200":
+          description: Alerts
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: User list
+      responses:
+        "200":
+          description: Users
+  /admin/users/{id}/activate:
+    put:
+      tags: [Admin]
+      summary: Activate user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated status
+  /admin/settings:
+    get:
+      tags: [Admin]
+      summary: Current settings
+      responses:
+        "200":
+          description: Settings
+    put:
+      tags: [Admin]
+      summary: Update settings
+      responses:
+        "200":
+          description: Updated settings
+  /admin/platform:
+    get:
+      tags: [Admin]
+      summary: Platform status
+      responses:
+        "200":
+          description: Platform details
+  /admin/permissions:
+    get:
+      tags: [Admin]
+      summary: Permission matrix
+      responses:
+        "200":
+          description: Permissions

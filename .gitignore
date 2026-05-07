@@ -2,94 +2,21 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
-env/
 venv/
-ENV/
-env.bak/
-venv.bak/
-pi/env/
+.env
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Datasets & MLflow
+*.csv
+*.db
+mlruns/
+*.joblib
+*.pkl
 
-# IDEs
+# Node / React
+node_modules/
+dist/
+.DS_Store
+
+# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# ============================================
-# MLOPS Specific Files (DO NOT PUSH)
-# ============================================
-
-# Trained Models (large binary files - retrain locally)
-pi/MLOPS/*.joblib
-pi/MLOPS/*.pkl
-pi/MLOPS/*.h5
-
-# Databases (generated locally)
-pi/MLOPS/*.db
-pi/MLOPS/*.sqlite
-pi/MLOPS/*.sqlite3
-
-# Node.js (if accidentally added)
-node_modules/
-package-lock.json
-package.json
-
-# MLflow artifacts (generated during training)
-pi/MLOPS/mlruns/
-pi/MLOPS/mlflow-runs/
-
-# Test cache
-pi/MLOPS/.pytest_cache/
-pi/MLOPS/.coverage
-pi/MLOPS/htmlcov/
-
-# Logs
-pi/MLOPS/*.log
-pi/MLOPS/logs/
-
-# Temporary files
-pi/MLOPS/tmp/
-pi/MLOPS/temp/
-pi/MLOPS/*.tmp
-
-# Large data files
-pi/streamlit_app/models/*.pkl
-pi/Data5G/*.csv
-pi/Data5G/*.arff
-
-# Generated plots/images
-pi/MLOPS/shap_outputs/
-pi/MLOPS/*.png
-pi/MLOPS/*.jpg
-
-# Environment variables
-.env
-.env.local
-pi/MLOPS/.env

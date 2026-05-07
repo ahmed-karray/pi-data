@@ -1,0 +1,117 @@
+# =============================================================================
+# docker-compose.full.yml — 6G Smart City IDS — Full Stack
+#
+# Starts: Elasticsearch + Kibana + FastAPI (+ embedded MLflow)
+#
+# Usage:
+#   make full-up          → docker compose -f docker-compose.full.yml up -d --build
+#   make full-down        → docker compose -f docker-compose.full.yml down
+#   docker compose -f docker-compose.full.yml logs -f api
+#
+# Access:
+#   FastAPI  / Swagger  → http://localhost:8000/docs
+#   MLflow              → http://localhost:5000
+#   Kibana              → http://localhost:5601
+#   Elasticsearch       → http://localhost:9200
+# =============================================================================
+
+version: "3.8"
+
+services:
+
+  # ── Elasticsearch ────────────────────────────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: ids_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false        # no auth for local dev/demo
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - ids_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Kibana ───────────────────────────────────────────────────────────────────
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: ids_kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - ids_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+  # ── 6G IDS API  (FastAPI :8000  +  MLflow :5000 in same container) ──────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ids_api
+    environment:
+      - ES_HOST=http://elasticsearch:9200   # point to ES container, not localhost
+      - ES_TIMEOUT=10
+      - MLFLOW_TRACKING_URI=http://localhost:5000
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"    # FastAPI / Swagger UI
+      - "5000:5000"    # MLflow Tracking UI
+    volumes:
+      - mlflow_data:/app/mlruns   # persist MLflow experiments across restarts
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - ids_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── React Frontend ───────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../app_web
+      dockerfile: Dockerfile
+    container_name: ids_frontend
+    ports:
+      - "3000:80"    # Expose on port 3000
+    depends_on:
+      - api
+    networks:
+      - ids_network
+    restart: unless-stopped
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  es_data:
+    driver: local
+  mlflow_data:
+    driver: local
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  ids_network:
+    driver: bridge
