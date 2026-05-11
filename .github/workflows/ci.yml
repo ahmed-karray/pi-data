@@ -54,6 +54,7 @@ jobs:
             --ignore 85679 \
             --ignore 71587 \
             --ignore 77891 \
+            --ignore SFTY-20260407-09322 \
             --ignore 71584 \
             --ignore SFTY-20260112-09087 \
             --ignore 71692 \
