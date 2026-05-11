@@ -5,7 +5,7 @@ from model_pipeline import (
     train_model,
     evaluate_model,
 )
- 
+
 
 def main():
     parser = argparse.ArgumentParser(
