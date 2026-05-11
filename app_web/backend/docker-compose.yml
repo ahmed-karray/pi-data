@@ -1,0 +1,166 @@
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.gateway.app:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8010:8000"
+    env_file:
+      - .env
+    depends_on:
+      - auth_service
+      - detection_service
+      - ml_training_service
+      - monitoring_service
+      - dashboard_service
+      - admin_service
+    networks:
+      - gateway
+      - backend
+    volumes:
+      - ../../mlops:/workspace/mlops:ro
+      - ../public/data:/workspace/Data5G:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  auth_service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.auth_service.app:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    env_file: [.env]
+    networks: [backend]
+    volumes:
+      - ../../mlops:/workspace/mlops:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  detection_service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.detection_service.app:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    env_file: [.env]
+    networks: [backend]
+    volumes:
+      - ../../mlops:/workspace/mlops:ro
+      - ../public/data:/workspace/Data5G:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ml_training_service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.ml_training_service.app:app --host 0.0.0.0 --port 8003
+    ports:
+      - "8003:8003"
+    env_file: [.env]
+    networks: [backend]
+    volumes:
+      - ../../mlops:/workspace/mlops
+      - ../public/data:/workspace/Data5G:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  monitoring_service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.monitoring_service.app:app --host 0.0.0.0 --port 8004
+    ports:
+      - "8004:8004"
+    env_file: [.env]
+    networks: [backend]
+    volumes:
+      - ../../mlops:/workspace/mlops
+      - ../public/data:/workspace/Data5G:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  dashboard_service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.dashboard_service.app:app --host 0.0.0.0 --port 8005
+    ports:
+      - "8005:8005"
+    env_file: [.env]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  admin_service:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.admin_service.app:app --host 0.0.0.0 --port 8006
+    ports:
+      - "8006:8006"
+    env_file: [.env]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  analyst-ui:
+    build:
+      context: ../frontend/analyst
+      dockerfile: Dockerfile
+    ports:
+      - "3001:80"
+    depends_on:
+      - gateway
+    networks:
+      - gateway
+
+  scientist-ui:
+    build:
+      context: ../frontend/scientist
+      dockerfile: Dockerfile
+    ports:
+      - "3002:80"
+    depends_on:
+      - gateway
+    networks:
+      - gateway
+
+  admin-ui:
+    build:
+      context: ../frontend/admin
+      dockerfile: Dockerfile
+    ports:
+      - "3003:80"
+    depends_on:
+      - gateway
+    networks:
+      - gateway
+
+networks:
+  gateway:
+  backend:

@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Datasets & MLflow
+*.csv
+*.db
+mlruns/
+*.joblib
+*.pkl
+
+# Node / React
+node_modules/
+dist/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,99 @@
+name: CD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push backend
+        run: |
+          docker build -t $DOCKERHUB_USER/6g-ids-backend:${{ github.sha }} -f app_web/backend/Dockerfile.backend app_web/backend
+          docker push $DOCKERHUB_USER/6g-ids-backend:${{ github.sha }}
+      - name: Build and push analyst UI
+        run: |
+          docker build -t $DOCKERHUB_USER/6g-ids-analyst:${{ github.sha }} -f app_web/frontend/analyst/Dockerfile app_web/frontend/analyst
+          docker push $DOCKERHUB_USER/6g-ids-analyst:${{ github.sha }}
+      - name: Build and push scientist UI
+        run: |
+          docker build -t $DOCKERHUB_USER/6g-ids-scientist:${{ github.sha }} -f app_web/frontend/scientist/Dockerfile app_web/frontend/scientist
+          docker push $DOCKERHUB_USER/6g-ids-scientist:${{ github.sha }}
+      - name: Build and push admin UI
+        run: |
+          docker build -t $DOCKERHUB_USER/6g-ids-admin:${{ github.sha }} -f app_web/frontend/admin/Dockerfile app_web/frontend/admin
+          docker push $DOCKERHUB_USER/6g-ids-admin:${{ github.sha }}
+
+  mlflow-report:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      ES_URL: ${{ secrets.ES_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app_web/backend/requirements.txt
+          pip install -r MLOPS/requirements.txt
+      - name: Run all datasets
+        run: |
+          python MLOPS/main.py --dataset eMBB --train
+          python MLOPS/main.py --dataset mMTC --train
+          python MLOPS/main.py --dataset URLLC --train
+      - name: Register best run
+        run: |
+          python <<'PY'
+          import mlflow
+          from mlflow.tracking import MlflowClient
+
+          mlflow.set_tracking_uri("${{ secrets.MLFLOW_TRACKING_URI }}")
+          runs = mlflow.search_runs()
+          best = runs.sort_values("metrics.f1_macro", ascending=False).iloc[0]
+          client = MlflowClient()
+          name = "6G-IDS-Champion"
+          existing = {model.name for model in client.search_registered_models()}
+          if name not in existing:
+              client.create_registered_model(name)
+          mv = client.create_model_version(
+              name=name,
+              source=best["artifact_uri"],
+              run_id=best["run_id"],
+          )
+          client.transition_model_version_stage(
+              name=name,
+              version=mv.version,
+              stage="Production",
+          )
+          print(f"Best run: {best['run_id']} version {mv.version}")
+          PY
+      - name: Job summary
+        run: echo "MLflow experiment URI: $MLFLOW_TRACKING_URI" >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [mlflow-report]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy stack
+        run: docker compose -f docker-compose.yml up -d
+      - name: Wait for services
+        run: sleep 30
+      - name: Gateway health
+        run: curl --fail http://localhost:8010/health
+      - name: MLOPS health
+        run: curl --fail http://localhost:8088/health
+      - name: Job summary
+        run: echo "Deployment healthy" >> $GITHUB_STEP_SUMMARY

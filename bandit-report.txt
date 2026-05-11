@@ -1,0 +1,124 @@
+Run started:2026-05-06 19:57:17.444943+00:00
+
+Test results:
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: MLOPS\database.py:208:12
+207	        cursor.execute(
+208	            f"""
+209	            SELECT COUNT(*) as total FROM predictions {where_clause}
+210	        """,
+211	            params,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: MLOPS\database.py:217:12
+216	        cursor.execute(
+217	            f"""
+218	            SELECT prediction, COUNT(*) as count
+219	            FROM predictions {where_clause}
+220	            GROUP BY prediction
+221	        """,
+222	            params,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: MLOPS\database.py:230:12
+229	        cursor.execute(
+230	            f"""
+231	            SELECT attack_type, COUNT(*) as count
+232	            FROM predictions
+233	            {where_clause} AND prediction = 'Malicious'
+234	            GROUP BY attack_type
+235	            ORDER BY count DESC
+236	        """,
+237	            params,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: MLOPS\database.py:243:12
+242	        cursor.execute(
+243	            f"""
+244	            SELECT severity, COUNT(*) as count
+245	            FROM predictions
+246	            {where_clause} AND prediction = 'Malicious'
+247	            GROUP BY severity
+248	            ORDER BY count DESC
+249	        """,
+250	            params,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: MLOPS\database.py:256:12
+255	        cursor.execute(
+256	            f"""
+257	            SELECT AVG(confidence) as avg_confidence
+258	            FROM predictions {where_clause}
+259	        """,
+260	            params,
+
+--------------------------------------------------
+>> Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b608_hardcoded_sql_expressions.html
+   Location: MLOPS\database.py:289:12
+288	        cursor.execute(
+289	            f"""
+290	            SELECT
+291	                strftime('%Y-%m-%d %H:%M', timestamp,
+292	                    '-' || (strftime('%M', timestamp) % ?) || ' minutes') as time_bucket,
+293	                COUNT(*) as total,
+294	                SUM(CASE WHEN prediction = 'Malicious' THEN 1 ELSE 0 END) as malicious,
+295	                SUM(CASE WHEN prediction = 'Benign' THEN 1 ELSE 0 END) as benign,
+296	                AVG(confidence) as avg_confidence
+297	            FROM predictions
+298	            {where_clause}
+299	            GROUP BY time_bucket
+300	            ORDER BY time_bucket
+301	        """,
+302	            [interval_minutes] + params,
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to httpx with timeout set to None
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: app_web/backend\gateway\app.py:83:13
+82	    url = f"{upstream}/{path}"
+83	    client = httpx.AsyncClient(timeout=None)
+84	    upstream_request = client.build_request(
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 6457
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 128
+		Medium: 7
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 1
+		Medium: 9
+		High: 125
+Files skipped (0):

@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: 6G IDS API - Security Analyst
+  version: 1.0.0
+  description: Role-scoped analyst access for IOTinel by Hexamind Security.
+servers:
+  - url: http://localhost:8010
+tags:
+  - name: Detection
+  - name: Dashboard
+paths:
+  /detect/predict:
+    post:
+      tags: [Detection]
+      summary: Single intrusion prediction
+      requestBody:
+        required: true
+      responses:
+        "200":
+          description: Prediction result
+  /detect/batch:
+    get:
+      tags: [Detection]
+      summary: Batch prediction upload guidance or recent batch access
+      responses:
+        "200":
+          description: Batch analysis response
+  /detect/history:
+    get:
+      tags: [Detection]
+      summary: Prediction history
+      responses:
+        "200":
+          description: Analyst history log
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: Dashboard KPI overview
+      responses:
+        "200":
+          description: Overview metrics
+  /dashboard/attacks:
+    get:
+      tags: [Dashboard]
+      summary: Attack type distribution
+      responses:
+        "200":
+          description: Attack distribution
+  /dashboard/timeline:
+    get:
+      tags: [Dashboard]
+      summary: Detections per hour timeline
+      responses:
+        "200":
+          description: Timeline points
+  /dashboard/alerts:
+    get:
+      tags: [Dashboard]
+      summary: Recent alert feed
+      responses:
+        "200":
+          description: Alert collection

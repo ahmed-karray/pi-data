@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: 6G IDS API - Data Scientist
+  version: 1.0.0
+  description: Role-scoped scientist access for IOTinel by Hexamind Security.
+servers:
+  - url: http://localhost:8010
+tags:
+  - name: Training
+  - name: Monitoring
+  - name: Detection
+paths:
+  /train/start:
+    post:
+      tags: [Training]
+      summary: Trigger a training run
+      responses:
+        "200":
+          description: Training run created
+  /train/runs:
+    get:
+      tags: [Training]
+      summary: List MLflow-aligned runs
+      responses:
+        "200":
+          description: Run list
+  /train/promote/{run_id}:
+    post:
+      tags: [Training]
+      summary: Promote a run to champion
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotion outcome
+  /train/datasets:
+    get:
+      tags: [Training]
+      summary: Dataset metadata
+      responses:
+        "200":
+          description: Dataset list
+  /monitor/drift:
+    get:
+      tags: [Monitoring]
+      summary: Feature drift scores
+      responses:
+        "200":
+          description: Drift report
+  /monitor/metrics:
+    get:
+      tags: [Monitoring]
+      summary: Production metrics over time
+      responses:
+        "200":
+          description: Metrics timeline
+  /monitor/retrain:
+    post:
+      tags: [Monitoring]
+      summary: Trigger retraining when drift exceeds threshold
+      responses:
+        "200":
+          description: Retrain outcome
+  /detect/predict:
+    post:
+      tags: [Detection]
+      summary: Single prediction for validation workflows
+      responses:
+        "200":
+          description: Prediction result

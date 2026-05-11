@@ -1,0 +1,6 @@
+streamlit run app_corr.py
+python .\main.py --help
+
+#docer
+docker build -t anasy_mlops .
+docker run -p 8000:8000 -p 5000:5000 anasy_mlops

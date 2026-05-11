@@ -1,0 +1,60 @@
+openapi: 3.1.0
+info:
+  title: 6G IDS API - Security Analyst
+  version: 1.0.0
+  description: Analyst-scoped gateway API for IOTinel.
+servers:
+  - url: http://localhost:8010
+tags:
+  - name: Detection
+  - name: Dashboard
+paths:
+  /detect/predict:
+    post:
+      tags: [Detection]
+      summary: Single prediction
+      responses:
+        "200":
+          description: Prediction payload
+  /detect/batch:
+    get:
+      tags: [Detection]
+      summary: Batch upload interface
+      responses:
+        "200":
+          description: Batch result
+  /detect/history:
+    get:
+      tags: [Detection]
+      summary: Prediction history
+      responses:
+        "200":
+          description: Analyst history
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: KPI overview
+      responses:
+        "200":
+          description: Overview
+  /dashboard/attacks:
+    get:
+      tags: [Dashboard]
+      summary: Attack distribution
+      responses:
+        "200":
+          description: Attack chart data
+  /dashboard/timeline:
+    get:
+      tags: [Dashboard]
+      summary: Detection timeline
+      responses:
+        "200":
+          description: Timeline data
+  /dashboard/alerts:
+    get:
+      tags: [Dashboard]
+      summary: Alert feed
+      responses:
+        "200":
+          description: Alerts

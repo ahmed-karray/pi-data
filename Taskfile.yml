@@ -1,0 +1,39 @@
+version: "3"
+
+tasks:
+  lint:
+    cmds:
+      - black app_web/backend MLOPS
+      - flake8 app_web/backend MLOPS --max-line-length=100
+
+  security:
+    cmds:
+      - bandit -r app_web/backend MLOPS -ll
+      - safety check -r app_web/backend/requirements.txt
+
+  test:
+    cmds:
+      - pytest MLOPS/test_pipeline.py MLOPS/test_api.py MLOPS/test_attack_classifier.py app_web/backend/tests -v --tb=short
+
+  train:
+    cmds:
+      - python MLOPS/main.py --all
+
+  up:
+    cmds:
+      - docker compose up -d
+
+  down:
+    cmds:
+      - docker compose down
+
+  logs:
+    cmds:
+      - docker compose logs -f
+
+  ci:
+    cmds:
+      - task: lint
+      - task: security
+      - task: test
+      - task: train

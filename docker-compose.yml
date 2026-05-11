@@ -1,0 +1,384 @@
+# =============================================================================
+# docker-compose.yml — pi_4data
+# Unified Docker Compose for the 6G Smart City IDS Project
+#
+# Docker Desktop will show:
+#   📦 pi_4data
+#    ├── mlops-api           (FastAPI + MLflow)
+#    ├── mlops-elasticsearch (Elasticsearch 8.x)
+#    ├── mlops-kibana        (Kibana 8.x)
+#    ├── dev-gateway         (API Gateway)
+#    ├── dev-auth            (Auth Service)
+#    ├── dev-detection       (Detection Service)
+#    ├── dev-training        (ML Training Service)
+#    ├── dev-monitoring      (Monitoring Service)
+#    ├── dev-dashboard       (Dashboard Service)
+#    ├── dev-admin           (Admin Service)![1777937723396](image/docker-compose/1777937723396.png)![1777937727863](image/docker-compose/1777937727863.png)![1777937738263](image/docker-compose/1777937738263.png)![1777937759735](image/docker-compose/1777937759735.png)![1777937759925](image/docker-compose/1777937759925.png)![1777938258227](image/docker-compose/1777938258227.png)
+#    └── dev-frontend        (React UI)
+#
+# Usage:
+#   docker compose up -d --build
+#   docker compose down
+#   docker compose logs -f mlops-api
+#
+# Access:
+#   Frontend (React)    → http://localhost:3000
+#   MLOPS FastAPI/Swagger → http://localhost:8080/docs
+#   MLflow UI           → http://localhost:5000
+#   Gateway             → http://localhost:8010
+#   Elasticsearch       → http://localhost:9200
+#   Kibana              → http://localhost:5601
+# =============================================================================
+
+name: pi_4data
+
+x-app-web-env: &app-web-env
+  JWT_SECRET: hexamind-dev-secret
+  DATABASE_URL: sqlite:////workspace/app_web/backend/iotinel.db
+  MLFLOW_TRACKING_URI: http://mlops-api:5000
+  REDIS_URL: redis://redis:6379/0
+  ES_HOST: http://mlops-elasticsearch:9200
+  AUTH_SERVICE_URL: http://auth_service:8001
+  DETECTION_SERVICE_URL: http://detection_service:8002
+  TRAINING_SERVICE_URL: http://ml_training_service:8003
+  MONITORING_SERVICE_URL: http://monitoring_service:8004
+  DASHBOARD_SERVICE_URL: http://dashboard_service:8005
+  ADMIN_SERVICE_URL: http://admin_service:8006
+  ANALYST_UI_URL: http://analyst-ui:80
+  SCIENTIST_UI_URL: http://scientist-ui:80
+  ADMIN_UI_URL: http://admin-ui:80
+
+services:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  #  MLOPS SERVICES
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ── MLOPS API (FastAPI + MLflow) ──────────────────────────────────────────
+  mlops-api:
+    build:
+      context: ./MLOPS
+      dockerfile: Dockerfile
+    command: >
+      sh -c "mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/mlruns
+      --allowed-hosts '*'
+      --host 0.0.0.0
+      --port 5000 &
+      uvicorn app:app
+      --host 0.0.0.0
+      --port 8000"
+    environment:
+      - ES_HOST=http://mlops-elasticsearch:9200
+      - ES_TIMEOUT=10
+      - MLFLOW_TRACKING_URI=http://127.0.0.1:5000
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8088:8000"    # FastAPI / Swagger UI
+      - "5000:5000"    # MLflow Tracking UI
+    volumes:
+      - ./MLOPS:/app
+      - mlflow_data:/mlflow
+      - ./app_web/public/data:/app/Data5G:ro
+    depends_on:
+      mlops-elasticsearch:
+        condition: service_healthy
+    networks:
+      - pi4_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── Elasticsearch ─────────────────────────────────────────────────────────
+  mlops-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    hostname: mlops-elasticsearch
+    command: ["sh", "/usr/local/bin/elasticsearch-entrypoint.sh"]
+    environment:
+      - discovery.type=single-node
+      - node.name=mlops-elasticsearch
+      - network.host=0.0.0.0
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+      - ./MLOPS/docker/elasticsearch-entrypoint.sh:/usr/local/bin/elasticsearch-entrypoint.sh:ro
+    networks:
+      - pi4_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Kibana ────────────────────────────────────────────────────────────────
+  mlops-kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://mlops-elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      mlops-elasticsearch:
+        condition: service_healthy
+    networks:
+      - pi4_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  #  DEV SERVICES (app_web)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ── API Gateway ───────────────────────────────────────────────────────────
+  dev-gateway:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.gateway.app:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8010:8000"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    depends_on:
+      mlops-api:
+        condition: service_healthy
+      auth_service:
+        condition: service_healthy
+      detection_service:
+        condition: service_healthy
+      ml_training_service:
+        condition: service_healthy
+      monitoring_service:
+        condition: service_healthy
+      dashboard_service:
+        condition: service_healthy
+      admin_service:
+        condition: service_healthy
+    networks:
+      - pi4_network
+    volumes:
+      - ./MLOPS:/workspace/mlops:ro
+      - ./app_web/public/data:/workspace/Data5G:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Auth Service ──────────────────────────────────────────────────────────
+  auth_service:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.auth_service.app:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    networks:
+      - pi4_network
+    volumes:
+      - ./MLOPS:/workspace/mlops:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Detection Service ─────────────────────────────────────────────────────
+  detection_service:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.detection_service.app:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    networks:
+      - pi4_network
+    volumes:
+      - ./MLOPS:/workspace/mlops:ro
+      - ./app_web/public/data:/workspace/Data5G:ro
+    depends_on:
+      mlops-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── ML Training Service ───────────────────────────────────────────────────
+  ml_training_service:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.ml_training_service.app:app --host 0.0.0.0 --port 8003
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    networks:
+      - pi4_network
+    volumes:
+      - ./MLOPS:/workspace/mlops
+      - ./app_web/public/data:/workspace/Data5G:ro
+      - ./app_web/public/data:/workspace/mlops/Data5G:ro
+      - mlflow_data:/mlflow
+    depends_on:
+      mlops-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Monitoring Service ────────────────────────────────────────────────────
+  monitoring_service:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.monitoring_service.app:app --host 0.0.0.0 --port 8004
+    ports:
+      - "8004:8004"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    networks:
+      - pi4_network
+    volumes:
+      - ./MLOPS:/workspace/mlops
+      - ./app_web/public/data:/workspace/Data5G:ro
+    depends_on:
+      mlops-api:
+        condition: service_healthy
+      mlops-elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Dashboard Service ─────────────────────────────────────────────────────
+  dashboard_service:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.dashboard_service.app:app --host 0.0.0.0 --port 8005
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    networks:
+      - pi4_network
+    depends_on:
+      mlops-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Admin Service ─────────────────────────────────────────────────────────
+  admin_service:
+    build:
+      context: ./app_web
+      dockerfile: backend/Dockerfile.backend
+    command: uvicorn app_web.backend.admin_service.app:app --host 0.0.0.0 --port 8006
+    ports:
+      - "8006:8006"
+    env_file:
+      - ./app_web/backend/.env
+    environment: *app-web-env
+    networks:
+      - pi4_network
+    depends_on:
+      mlops-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── React Frontend ────────────────────────────────────────────────────────
+  analyst-ui:
+    build:
+      context: ./app_web/frontend/analyst
+      dockerfile: Dockerfile
+    ports:
+      - "3001:80"
+    depends_on:
+      - dev-gateway
+    networks:
+      - pi4_network
+    restart: unless-stopped
+
+  scientist-ui:
+    build:
+      context: ./app_web/frontend/scientist
+      dockerfile: Dockerfile
+    ports:
+      - "3002:80"
+    depends_on:
+      - dev-gateway
+    networks:
+      - pi4_network
+    restart: unless-stopped
+
+  admin-ui:
+    build:
+      context: ./app_web/frontend/admin
+      dockerfile: Dockerfile
+    ports:
+      - "3003:80"
+    depends_on:
+      - dev-gateway
+    networks:
+      - pi4_network
+    restart: unless-stopped
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  VOLUMES
+# ═══════════════════════════════════════════════════════════════════════════
+volumes:
+  es_data:
+    driver: local
+  mlflow_data:
+    driver: local
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  NETWORKS
+# ═══════════════════════════════════════════════════════════════════════════
+networks:
+  pi4_network:
+    driver: bridge
